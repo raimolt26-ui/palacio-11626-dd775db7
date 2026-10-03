@@ -1,0 +1,1 @@
+Aquí van los escaneos 3D: porche.glb, recibidor.glb, salon.glb, cocina.glb, patio.glb (o .ply).

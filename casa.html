@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El palacio del 11626 · casa virtual</title>
+<!-- Casa virtual: los escaneos 3D de las 5 estancias (modelos/<estancia>.glb, o .ply si son splats)
+     para recorrer el palacio sentado, en cualquier sitio. En las Quest: WebXR immersive-vr; en pantalla:
+     arrastrar para girar. Las tarjetas se colocan una vez sobre los muebles del modelo y se guardan en el
+     navegador (posición en coordenadas del modelo). Comparte datos.json, img/ y audio/ con index.html. -->
+<style>
+:root{--fondo:#0f1724;--panel:#172338;--linea:#2c4060;--tinta:#eef2f7;--gris:#a9b8c9;--am:#f3b33d;--cy:#5cc9e2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--fondo);color:var(--tinta);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;overflow:hidden}
+#lienzo{position:fixed;inset:0}
+.barra{position:fixed;left:0;right:0;top:0;padding:max(10px,env(safe-area-inset-top)) 14px 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:linear-gradient(rgba(15,23,36,.95),rgba(15,23,36,.6));z-index:2}
+.barra h1{font-size:18px;margin-right:auto}
+button{font:inherit;font-size:16px;font-weight:600;border-radius:10px;border:2px solid var(--linea);background:var(--panel);color:var(--tinta);padding:9px 14px;cursor:pointer}
+button.on{background:var(--cy);border-color:var(--cy);color:#06202a}
+button.vr{background:var(--am);border-color:var(--am);color:#1b1407}
+.estado{position:fixed;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));font-size:15px;color:var(--gris);z-index:2;background:rgba(15,23,36,.8);padding:8px 12px;border-radius:10px}
+</style>
+</head>
+<body>
+<canvas id="lienzo"></canvas>
+<div class="barra">
+  <h1>Casa virtual</h1>
+  <button id="anterior">◀ Estancia</button><button id="siguiente">Estancia ▶</button>
+  <button id="mColocar">Colocar</button><button id="mPaseo" class="on">Paseo</button><button id="mExamen">Examen</button>
+  <button id="vr" class="vr" hidden>Entrar en VR</button>
+</div>
+<div class="estado" id="estado">Cargando…</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from "three";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import {PLYLoader} from "three/addons/loaders/PLYLoader.js";
+import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+
+const $ = id => document.getElementById(id), ESTADO = $("estado");
+const datos = await (await fetch("datos.json")).json();
+const CLAVE = "palacio11626:casa:";
+const leer = k => { try { return JSON.parse(localStorage.getItem(CLAVE + k) || "null"); } catch (e) { return null; } };
+const guardar = (k, v) => { try { localStorage.setItem(CLAVE + k, JSON.stringify(v)); } catch (e) {} };
+
+// ── escena ─────────────────────────────────────────────────────────────────────────────────
+const renderer = new THREE.WebGLRenderer({canvas: $("lienzo"), antialias: true});
+renderer.setPixelRatio(Math.min(2, devicePixelRatio)); renderer.xr.enabled = true;
+const escena = new THREE.Scene(); escena.background = new THREE.Color(0x101820);
+escena.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2));
+const camara = new THREE.PerspectiveCamera(70, 1, 0.03, 200);
+const carro = new THREE.Group(); carro.add(camara); escena.add(carro);      // el «carro» lleva al usuario por la casa
+const orbita = new OrbitControls(camara, renderer.domElement); orbita.enableDamping = true;
+function ajustar() { renderer.setSize(innerWidth, innerHeight, false); camara.aspect = innerWidth / innerHeight; camara.updateProjectionMatrix(); }
+addEventListener("resize", ajustar); ajustar();
+
+// ── tarjetas (mismo dibujo que index.html) ─────────────────────────────────────────────────
+const imagenes = {};
+await Promise.all(datos.flatMap(e => e.lugares).map(l => new Promise(ok => { const im = new Image(); im.onload = () => { imagenes[l.id] = im; ok(); }; im.onerror = ok; im.src = l.img; })));
+function envolver(x, t, px, py, ancho, alto) { let linea = "", y = py; for (const p of t.split(" ")) { const pr = linea ? linea + " " + p : p;
+  if (x.measureText(pr).width > ancho && linea) { x.fillText(linea, px, y); linea = p; y += alto; } else linea = pr; } if (linea) { x.fillText(linea, px, y); y += alto; } return y; }
+function lienzoTarjeta(l, e, tapada) {
+  const W = 1024, H = 1040, c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d");
+  x.fillStyle = "#fbf8f1"; x.fillRect(0, 0, W, H); x.fillStyle = e.color; x.fillRect(0, 0, W, 70);
+  x.fillStyle = "#fff"; x.font = "bold 36px system-ui"; x.textBaseline = "middle"; x.fillText(`${e.nombre} · ${e.bloque}`, 24, 36);
+  x.fillStyle = "#c8322a"; x.beginPath(); x.arc(70, 140, 50, 0, 7); x.fill();
+  x.fillStyle = "#fff"; x.font = "bold 64px system-ui"; x.textAlign = "center"; x.fillText(String(l.n), 70, 144); x.textAlign = "left";
+  x.fillStyle = "#1f2a37"; x.font = "bold 50px system-ui"; x.fillText(l.lugar, 140, 140);
+  if (tapada) { x.font = "bold 70px system-ui"; x.textAlign = "center"; x.fillText("¿Qué imagen hay aquí?", W / 2, 480);
+    x.font = "44px system-ui"; x.fillStyle = "#5a6573"; x.fillText("Dilo en voz alta y pulsa para comprobarlo", W / 2, 580); return c; }
+  const im = imagenes[l.id]; if (im) { const h = 400, w = im.width * h / im.height; x.drawImage(im, (W - w) / 2, 196, w, h); }
+  x.fillStyle = "#1f2a37"; x.font = "bold 42px system-ui"; let y = envolver(x, l.titulo, 30, 640, W - 60, 48);
+  x.font = "34px system-ui"; x.fillStyle = "#3a4555"; for (const t of l.lineas) y = envolver(x, t, 30, y + 4, W - 60, 40);
+  if (l.fon.length) { x.fillStyle = "#a04c00"; x.font = "bold 38px system-ui"; envolver(x, l.fon.join("  ·  "), 30, y + 8, W - 60, 44); }
+  return c;
+}
+const textura = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; };
+const ANCHO = 0.5, ALTO = ANCHO * 1040 / 1024;
+
+// ── estancias y modelos ────────────────────────────────────────────────────────────────────
+let ie = 0, modelo = null, tarjetas = [], modo = "paseo", siguienteLugar = 0, girado = 0, botones = {};
+const audio = new Audio();
+async function cargarModelo(clave) {
+  for (const ext of ["glb", "ply"]) {
+    const url = `modelos/${clave}.${ext}`;
+    const r = await fetch(url, {method: "HEAD"}).catch(() => null); if (!r || !r.ok) continue;
+    if (ext === "glb") return (await new GLTFLoader().loadAsync(url)).scene;
+    const g = await new PLYLoader().loadAsync(url);                 // nube de puntos / splat exportado como PLY
+    const m = new THREE.PointsMaterial({size: 0.012, vertexColors: g.hasAttribute("color")});
+    return new THREE.Points(g, m);
+  }
+  // sin escaneo todavía: una habitación de ejemplo
+  const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({color: 0x8a9bb0, side: THREE.BackSide});
+  const caja = new THREE.Mesh(new THREE.BoxGeometry(5, 2.6, 4), mat); caja.position.y = 1.3; g.add(caja);
+  const suelo = new THREE.GridHelper(5, 10, 0xf3b33d, 0x445566); g.add(suelo); g.userData.ejemplo = true; return g;
+}
+function encuadrar() {                                               // centra el modelo y apoya el suelo en y = 0
+  const b = new THREE.Box3().setFromObject(modelo), c = b.getCenter(new THREE.Vector3());
+  modelo.position.x -= c.x; modelo.position.z -= c.z; modelo.position.y -= b.min.y;
+  modelo.userData.radio = Math.max(b.max.x - b.min.x, b.max.z - b.min.z) / 2;
+}
+function ponerTarjetas() {
+  for (const t of tarjetas) escena.remove(t.malla); tarjetas = [];
+  const e = datos[ie], pos = leer(e.clave) || {};
+  for (const l of e.lugares) {
+    const frente = textura(lienzoTarjeta(l, e, false)), tapa = textura(lienzoTarjeta(l, e, true));
+    const malla = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO, ALTO), new THREE.MeshBasicMaterial({map: frente, side: THREE.DoubleSide}));
+    malla.userData.id = l.id; escena.add(malla);
+    const t = {l, malla, frente, tapa, puesta: !!pos[l.id], girada: false};
+    if (t.puesta) malla.position.fromArray(pos[l.id]);
+    tarjetas.push(t);
+  }
+  siguienteLugar = Math.max(0, tarjetas.findIndex(t => !t.puesta)); aplicarModo();
+}
+function aplicarModo() {
+  for (const t of tarjetas) {
+    t.malla.visible = t.puesta || (modo === "colocar" && tarjetas[siguienteLugar] === t);
+    t.girada = false; t.malla.material.map = modo === "examen" ? t.tapa : t.frente; t.malla.material.needsUpdate = true;
+  }
+  for (const [m, id] of [["colocar", "mColocar"], ["paseo", "mPaseo"], ["examen", "mExamen"]]) $(id).classList.toggle("on", modo === m);
+  const e = datos[ie], n = tarjetas.filter(t => t.puesta).length;
+  ESTADO.textContent = `${e.nombre} · ${e.bloque} · ${n} de 5 colocadas` + (modelo?.userData.ejemplo ? " · (sin escaneo: habitación de ejemplo)" : "")
+    + (modo === "colocar" && tarjetas[siguienteLugar] && !tarjetas[siguienteLugar].puesta ? ` · coloca ${tarjetas[siguienteLugar].l.n}: ${tarjetas[siguienteLugar].l.lugar}` : "");
+}
+async function irEstancia(i) {
+  ie = (i + datos.length) % datos.length; ESTADO.textContent = `Cargando ${datos[ie].nombre}…`;
+  if (modelo) escena.remove(modelo);
+  modelo = await cargarModelo(datos[ie].clave); escena.add(modelo); encuadrar();
+  carro.position.set(0, 0, 0); carro.rotation.set(0, 0, 0); botones.i = -1;
+  camara.position.set(0, 1.25, modelo.userData.radio * 0.6);   // sentado, cerca de la entrada
+  orbita.target.set(0, 1.0, 0); orbita.update();
+  ponerTarjetas();
+}
+
+// ── interacción común (ratón/dedo en pantalla, mandos o manos en VR) ───────────────────────
+const rayo = new THREE.Raycaster();
+function oir(t) { audio.src = t.l.audio; audio.play().catch(() => {}); }
+function accion(origen, dir) {
+  rayo.set(origen, dir);
+  const golpeTarjeta = rayo.intersectObjects(tarjetas.filter(t => t.puesta && t.malla.visible).map(t => t.malla))[0];
+  if (golpeTarjeta) {
+    const t = tarjetas.find(t => t.malla === golpeTarjeta.object);
+    if (modo === "colocar") { t.puesta = false; siguienteLugar = tarjetas.indexOf(t); aplicarModo(); return; }
+    if (modo === "examen" && !t.girada) { t.girada = true; t.malla.material.map = t.frente; t.malla.material.needsUpdate = true; }
+    oir(t); return;
+  }
+  if (modo === "colocar" && tarjetas[siguienteLugar] && !tarjetas[siguienteLugar].puesta) {
+    const g = rayo.intersectObject(modelo, true)[0];
+    const p = g ? g.point.clone().add(g.face ? g.face.normal.clone().transformDirection(g.object.matrixWorld).multiplyScalar(0.15) : new THREE.Vector3())
+                : origen.clone().addScaledVector(dir, 1.2);
+    if (p.y < 0.4) p.y += 0.35;                                       // que no quede pegada al suelo
+    const t = tarjetas[siguienteLugar]; t.malla.position.copy(p); t.puesta = true;
+    const pos = leer(datos[ie].clave) || {}; pos[t.l.id] = p.toArray(); guardar(datos[ie].clave, pos);
+    oir(t); siguienteLugar = tarjetas.findIndex(x => !x.puesta); if (siguienteLugar < 0) siguienteLugar = 0; aplicarModo();
+  }
+}
+renderer.domElement.addEventListener("click", ev => {
+  if (renderer.xr.isPresenting) return;
+  const ndc = new THREE.Vector2((ev.clientX / innerWidth) * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1);
+  rayo.setFromCamera(ndc, camara); accion(rayo.ray.origin.clone(), rayo.ray.direction.clone());
+});
+$("anterior").onclick = () => irEstancia(ie - 1); $("siguiente").onclick = () => irEstancia(ie + 1);
+$("mColocar").onclick = () => { modo = "colocar"; siguienteLugar = Math.max(0, tarjetas.findIndex(t => !t.puesta)); aplicarModo(); };
+$("mPaseo").onclick = () => { modo = "paseo"; aplicarModo(); }; $("mExamen").onclick = () => { modo = "examen"; aplicarModo(); };
+
+// ── VR: sentado; joystick izq. para moverse, der. para girar; botón A/X siguiente lugar; B/Y siguiente estancia ──
+if (navigator.xr && await navigator.xr.isSessionSupported("immersive-vr").catch(() => false)) {
+  $("vr").hidden = false;
+  $("vr").onclick = async () => {
+    const s = await navigator.xr.requestSession("immersive-vr", {optionalFeatures: ["local-floor", "hand-tracking"]});
+    renderer.xr.setReferenceSpaceType("local-floor"); await renderer.xr.setSession(s);
+    carro.position.set(camara.position.x, 0, camara.position.z); camara.position.set(0, 0, 0);   // el visor manda la altura
+    s.addEventListener("select", ev => {
+      const pr = ev.frame.getPose(ev.inputSource.targetRaySpace, renderer.xr.getReferenceSpace()); if (!pr) return;
+      const m = new THREE.Matrix4().fromArray(pr.transform.matrix).premultiply(carro.matrixWorld);
+      accion(new THREE.Vector3().setFromMatrixPosition(m), new THREE.Vector3(0, 0, -1).transformDirection(m));
+    });
+    s.addEventListener("end", () => irEstancia(ie));
+  };
+  for (const i of [0, 1]) {
+    const c = renderer.xr.getController(i);
+    c.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -4)]), new THREE.LineBasicMaterial({color: 0xf3b33d})));
+    carro.add(c);
+  }
+}
+
+function irAlLugar() {                                    // salta delante del siguiente lugar colocado
+  const puestas = tarjetas.filter(t => t.puesta); if (!puestas.length) return;
+  botones.i = ((botones.i ?? -1) + 1) % puestas.length; const t = puestas[botones.i];
+  const d = new THREE.Vector3(t.malla.position.x, 0, t.malla.position.z), yo = new THREE.Vector3(carro.position.x, 0, carro.position.z);
+  const hacia = d.clone().sub(yo).normalize(); carro.position.copy(d.addScaledVector(hacia, -1.1)); oir(t);
+}
+const reloj = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(0.05, reloj.getDelta()), sesion = renderer.xr.getSession();
+  if (sesion) {
+    for (const f of sesion.inputSources) {
+      const gp = f.gamepad; if (!gp) continue;
+      const [ , , x, y] = gp.axes.length >= 4 ? gp.axes : [0, 0, ...gp.axes];
+      if (f.handedness === "left" && (Math.abs(x) > 0.15 || Math.abs(y) > 0.15)) {
+        const dir = new THREE.Vector3(); camara.getWorldDirection(dir); dir.y = 0; dir.normalize();
+        const lado = new THREE.Vector3().crossVectors(dir, new THREE.Vector3(0, 1, 0));
+        carro.position.addScaledVector(dir, -y * 1.4 * dt).addScaledVector(lado, x * 1.4 * dt);
+      }
+      if (f.handedness === "right") {
+        if (Math.abs(x) > 0.7 && performance.now() - girado > 350) { carro.rotation.y -= Math.sign(x) * Math.PI / 6; girado = performance.now(); }
+        const a = gp.buttons[4]?.pressed, b = gp.buttons[5]?.pressed;          // A y B
+        if (a && !botones.a) irAlLugar(); if (b && !botones.b) irEstancia(ie + 1);
+        botones.a = a; botones.b = b;
+      }
+    }
+  } else orbita.update();
+  const cam = new THREE.Vector3(); camara.getWorldPosition(cam);
+  for (const t of tarjetas) if (t.malla.visible) t.malla.lookAt(cam.x, t.malla.position.y, cam.z);
+  if (modo === "colocar" && tarjetas[siguienteLugar] && !tarjetas[siguienteLugar].puesta) {
+    const t = tarjetas[siguienteLugar], d = new THREE.Vector3(); camara.getWorldDirection(d);
+    t.malla.position.copy(cam).addScaledVector(d, 1.0); t.malla.position.y -= 0.25;
+  }
+  renderer.render(escena, camara);
+});
+irEstancia(0);
+</script>
+</body>
+</html>
