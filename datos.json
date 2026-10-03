@@ -1,0 +1,438 @@
+[
+ {
+  "clave": "porche",
+  "nombre": "Porche de entrada",
+  "bloque": "PMBOK, Agile y Lean",
+  "color": "#1f5fae",
+  "lugares": [
+   {
+    "id": "porche-1",
+    "n": 1,
+    "lugar": "el escalón",
+    "titulo": "PMBOK 6 · por procesos",
+    "lineas": [
+     "5 grupos de procesos · 10 áreas",
+     "Iba Pedro En Moto a Casa"
+    ],
+    "rotulo": "OSO 6 · TORO 10 · OLA 5",
+    "fon": [
+     "OSO = 6",
+     "TORO = 10",
+     "OLA = 5"
+    ],
+    "img": "img/porche-1.jpg",
+    "audio": "audio/porche-1.mp3"
+   },
+   {
+    "id": "porche-2",
+    "n": 2,
+    "lugar": "el felpudo",
+    "titulo": "PMBOK 7 · deja los procesos",
+    "lineas": [
+     "12 principios · 8 dominios de desempeño"
+    ],
+    "rotulo": "FEO 7 · ATÚN 12 · OJO 8",
+    "fon": [
+     "FEO = 7",
+     "ATÚN = 12",
+     "OJO = 8"
+    ],
+    "img": "img/porche-2.jpg",
+    "audio": "audio/porche-2.mp3"
+   },
+   {
+    "id": "porche-3",
+    "n": 3,
+    "lugar": "el farol",
+    "titulo": "PERT · (O + 4M + P) / 6",
+    "lineas": [
+     "la M pesa cuatro veces",
+     "desviación = (P − O) / 6"
+    ],
+    "rotulo": "(O + 4M + P) / 6",
+    "fon": [
+     "OCA = 4",
+     "OSO = 6"
+    ],
+    "img": "img/porche-3.jpg",
+    "audio": "audio/porche-3.mp3"
+   },
+   {
+    "id": "porche-4",
+    "n": 4,
+    "lugar": "el banco",
+    "titulo": "Camino crítico · holgura total cero",
+    "lineas": [
+     "la actividad más larga NO tiene por qué ser crítica",
+     "total: no molesto al proyecto · libre: no molesto al vecino"
+    ],
+    "rotulo": "RÍO = 0",
+    "fon": [
+     "RÍO = 0"
+    ],
+    "img": "img/porche-4.jpg",
+    "audio": "audio/porche-4.mp3"
+   },
+   {
+    "id": "porche-5",
+    "n": 5,
+    "lugar": "la puerta",
+    "titulo": "Scrum · el Sprint ≤ 1 mes contiene a los demás",
+    "lineas": [
+     "Planning ≤ 8 h · Daily 15 min",
+     "Review ≤ 4 h (producto) · Retro ≤ 3 h (proceso)"
+    ],
+    "rotulo": "SPRINT ≤ 1 mes · HOJA 8 h · DALÍ 15 min · OCA 4 h · HUMO 3 h",
+    "fon": [
+     "HOJA = 8",
+     "DALÍ = 15",
+     "OCA = 4",
+     "HUMO = 3"
+    ],
+    "img": "img/porche-5.jpg",
+    "audio": "audio/porche-5.mp3"
+   }
+  ],
+  "vista": "img/porche-vista.jpg"
+ },
+ {
+  "clave": "recibidor",
+  "nombre": "Entrada / recibidor",
+  "bloque": "ENS",
+  "color": "#b35500",
+  "lugares": [
+   {
+    "id": "recibidor-1",
+    "n": 1,
+    "lugar": "la alfombra",
+    "titulo": "ENS · Real Decreto 311/2022, de 3 de mayo",
+    "lineas": [
+     "número · año · día · mes"
+    ],
+    "rotulo": "MEDITA · NIÑA · MOLA",
+    "fon": [
+     "MEDITA = 311",
+     "NIÑA = 22",
+     "MO = 3",
+     "LA = 5"
+    ],
+    "img": "img/recibidor-1.jpg",
+    "audio": "audio/recibidor-1.mp3"
+   },
+   {
+    "id": "recibidor-2",
+    "n": 2,
+    "lugar": "el cuadro",
+    "titulo": "Los 7 principios básicos del ENS",
+    "lineas": [
+     "«El PROfesor RIEgo PREpara LÍNeas, VIGila, REEvalúa y DIFerencia»",
+     "proceso integral · riesgos · prevención, detección, respuesta y conservación · líneas de defensa · vigilancia continua · reevaluación periódica · diferenciación de responsabilidades"
+    ],
+    "rotulo": "PRO · RIE · PRE · LÍN · VIG · REE · DIF",
+    "fon": [],
+    "img": "img/recibidor-2.jpg",
+    "audio": "audio/recibidor-2.mp3"
+   },
+   {
+    "id": "recibidor-3",
+    "n": 3,
+    "lugar": "el espejo",
+    "titulo": "Dimensiones y categoría",
+    "lineas": [
+     "C · I · T · A · D: «una CITA con la D»",
+     "cada dimensión: nivel BAJO, MEDIO o ALTO",
+     "la categoría es el MÁXIMO: un solo ALTO → ALTA"
+    ],
+    "rotulo": "C · I · T · A · D",
+    "fon": [],
+    "img": "img/recibidor-3.jpg",
+    "audio": "audio/recibidor-3.mp3"
+   },
+   {
+    "id": "recibidor-4",
+    "n": 4,
+    "lugar": "el mueble de las llaves",
+    "titulo": "Auditoría al menos cada 2 años",
+    "lineas": [
+     "BÁSICA: autoevaluación · MEDIA y ALTA: auditoría",
+     "la categoría se reevalúa al menos cada año"
+    ],
+    "rotulo": "NOÉ = 2 años",
+    "fon": [
+     "NOÉ = 2"
+    ],
+    "img": "img/recibidor-4.jpg",
+    "audio": "audio/recibidor-4.mp3"
+   },
+   {
+    "id": "recibidor-5",
+    "n": 5,
+    "lugar": "la lámpara",
+    "titulo": "Análisis de riesgos [op.pl.1]",
+    "lineas": [
+     "BÁSICA: informal · MEDIA: R1 semiformal · ALTA: R2 formal"
+    ],
+    "rotulo": "informal · R1 · R2",
+    "fon": [],
+    "img": "img/recibidor-5.jpg",
+    "audio": "audio/recibidor-5.mp3"
+   }
+  ],
+  "vista": "img/recibidor-vista.jpg"
+ },
+ {
+  "clave": "salon",
+  "nombre": "Salón",
+  "bloque": "Interoperabilidad",
+  "color": "#1d7a46",
+  "lugares": [
+   {
+    "id": "salon-1",
+    "n": 1,
+    "lugar": "el sofá",
+    "titulo": "HL7 v2 · los segmentos",
+    "lineas": [
+     "MSH cabecera (MSH-9: tipo de mensaje) · PID paciente · PV1 visita",
+     "OBR petición · OBX resultado / observación"
+    ],
+    "rotulo": "MSH · PID · PV1 · OBR · OBX",
+    "fon": [],
+    "img": "img/salon-1.jpg",
+    "audio": "audio/salon-1.mp3"
+   },
+   {
+    "id": "salon-2",
+    "n": 2,
+    "lugar": "la televisión",
+    "titulo": "HL7 v2 · los mensajes",
+    "lineas": [
+     "ADT^A01 ingreso · ADT^A03 alta · ADT^A08 actualización",
+     "ORM^O01 petición · ORU^R01 resultados · ACK confirmación"
+    ],
+    "rotulo": "ADT^A01 ingreso · ORU^R01 resultados",
+    "fon": [],
+    "img": "img/salon-2.jpg",
+    "audio": "audio/salon-2.mp3"
+   },
+   {
+    "id": "salon-3",
+    "n": 3,
+    "lugar": "la mesa baja",
+    "titulo": "FHIR · recursos por API REST",
+    "lineas": [
+     "JSON y XML · versión normativa R4",
+     "regla 80/20: núcleo para lo común, extensiones para el resto"
+    ],
+    "rotulo": "FHIR · REST · R4 · 80/20",
+    "fon": [],
+    "img": "img/salon-3.jpg",
+    "audio": "audio/salon-3.mp3"
+   },
+   {
+    "id": "salon-4",
+    "n": 4,
+    "lugar": "la ventana",
+    "titulo": "DICOM · imagen médica",
+    "lineas": [
+     "Paciente → Estudio → Serie → Instancia",
+     "puerto 104 · C-STORE envía · C-ECHO comprueba"
+    ],
+    "rotulo": "TERCO = 104",
+    "fon": [
+     "TERCO = 104"
+    ],
+    "img": "img/salon-4.jpg",
+    "audio": "audio/salon-4.mp3"
+   },
+   {
+    "id": "salon-5",
+    "n": 5,
+    "lugar": "la estantería",
+    "titulo": "Terminologías",
+    "lineas": [
+     "SNOMED CT clínica · LOINC laboratorio",
+     "CIE-10-ES diagnósticos · ATC medicamentos",
+     "CDA: XML, Release 2, niveles 1-2-3"
+    ],
+    "rotulo": "SNOMED · LOINC · CIE-10 · ATC",
+    "fon": [],
+    "img": "img/salon-5.jpg",
+    "audio": "audio/salon-5.mp3"
+   }
+  ],
+  "vista": "img/salon-vista.jpg"
+ },
+ {
+  "clave": "cocina",
+  "nombre": "Cocina",
+  "bloque": "ITIL",
+  "color": "#c8322a",
+  "lugares": [
+   {
+    "id": "cocina-1",
+    "n": 1,
+    "lugar": "la nevera",
+    "titulo": "Incidente ≠ problema",
+    "lineas": [
+     "INCIDENTE: restaurar el servicio cuanto antes",
+     "PROBLEMA: la causa raíz · error conocido = causa + solución temporal"
+    ],
+    "rotulo": "INCIDENTE · PROBLEMA",
+    "fon": [],
+    "img": "img/cocina-1.jpg",
+    "audio": "audio/cocina-1.mp3"
+   },
+   {
+    "id": "cocina-2",
+    "n": 2,
+    "lugar": "los fogones",
+    "titulo": "Incidente mayor",
+    "lineas": [
+     "alta prioridad o alto impacto en la organización",
+     "NO es «el más complejo»"
+    ],
+    "rotulo": "INCIDENTE MAYOR = impacto",
+    "fon": [],
+    "img": "img/cocina-2.jpg",
+    "audio": "audio/cocina-2.mp3"
+   },
+   {
+    "id": "cocina-3",
+    "n": 3,
+    "lugar": "el fregadero",
+    "titulo": "Eventos (Service Operation, ITIL v3)",
+    "lineas": [
+     "informativo · advertencia · excepción"
+    ],
+    "rotulo": "informativo · advertencia · excepción",
+    "fon": [],
+    "img": "img/cocina-3.jpg",
+    "audio": "audio/cocina-3.mp3"
+   },
+   {
+    "id": "cocina-4",
+    "n": 4,
+    "lugar": "la mesa",
+    "titulo": "Acuerdos",
+    "lineas": [
+     "SLA con el cliente · OLA entre equipos internos",
+     "UC: contrato de soporte con un tercero"
+    ],
+    "rotulo": "SLA · OLA · UC",
+    "fon": [],
+    "img": "img/cocina-4.jpg",
+    "audio": "audio/cocina-4.mp3"
+   },
+   {
+    "id": "cocina-5",
+    "n": 5,
+    "lugar": "el horno",
+    "titulo": "ITIL 4 · los 7 principios guía",
+    "lineas": [
+     "«Vamos a Cocinar Paella Con Huevos Sin Olivas»",
+     "Valor · Comenzar donde se está · Progresar iterativamente · Colaborar y visibilidad · Holístico · Simple y práctico · Optimizar y automatizar"
+    ],
+    "rotulo": "V · C · P · C · H · S · O",
+    "fon": [],
+    "img": "img/cocina-5.jpg",
+    "audio": "audio/cocina-5.mp3"
+   }
+  ],
+  "vista": "img/cocina-vista.jpg"
+ },
+ {
+  "clave": "patio",
+  "nombre": "Patio",
+  "bloque": "Protección de datos",
+  "color": "#5b3a8a",
+  "lugares": [
+   {
+    "id": "patio-1",
+    "n": 1,
+    "lugar": "la puerta del patio",
+    "titulo": "Brechas de datos",
+    "lineas": [
+     "con riesgo → a la autoridad en 72 h (art. 33)",
+     "riesgo ALTO → también a los afectados, sin dilación (art. 34)"
+    ],
+    "rotulo": "FINO 72 h · MOMIA 33 · MICO 34",
+    "fon": [
+     "FINO = 72",
+     "MOMIA = 33",
+     "MICO = 34"
+    ],
+    "img": "img/patio-1.jpg",
+    "audio": "audio/patio-1.mp3"
+   },
+   {
+    "id": "patio-2",
+    "n": 2,
+    "lugar": "la pila",
+    "titulo": "Menores · consentimiento",
+    "lineas": [
+     "LOPDGDD art. 7: desde los 14 años",
+     "el RGPD dice 16, pero cada Estado puede bajarlo"
+    ],
+    "rotulo": "TACO = 14 · TAZA = 16",
+    "fon": [
+     "TACO = 14",
+     "TAZA = 16"
+    ],
+    "img": "img/patio-2.jpg",
+    "audio": "audio/patio-2.mp3"
+   },
+   {
+    "id": "patio-3",
+    "n": 3,
+    "lugar": "la mesa",
+    "titulo": "Quién hace qué",
+    "lineas": [
+     "Responsable decide fines y medios (art. 24) · Encargado, por cuenta, con contrato (art. 28)",
+     "DPD: asesora; ante la AEPD y las autoridades autonómicas (LOPDGDD art. 36)"
+    ],
+    "rotulo": "NUCA 24 · NOCHE 28 · MESA 36",
+    "fon": [
+     "NUCA = 24",
+     "NOCHE = 28",
+     "MESA = 36"
+    ],
+    "img": "img/patio-3.jpg",
+    "audio": "audio/patio-3.mp3"
+   },
+   {
+    "id": "patio-4",
+    "n": 4,
+    "lugar": "el tendedero",
+    "titulo": "Derechos (arts. 15 a 22, sin el 19)",
+    "lineas": [
+     "«Ana Rompe Su Libreta… Pero Olvida Decirlo»",
+     "acceso 15 · rectificación 16 · supresión 17 · limitación 18 · portabilidad 20 · oposición 21 · decisiones 22"
+    ],
+    "rotulo": "A R S L … P O D",
+    "fon": [
+     "DALÍ = 15",
+     "NORA = 20"
+    ],
+    "img": "img/patio-4.jpg",
+    "audio": "audio/patio-4.mp3"
+   },
+   {
+    "id": "patio-5",
+    "n": 5,
+    "lugar": "la tumbona",
+    "titulo": "Sanciones",
+    "lineas": [
+     "hasta 20 M€ o el 4 % · menos graves: 10 M€ o 2 %",
+     "Administraciones: apercibimiento, no multa (LOPDGDD art. 77)"
+    ],
+    "rotulo": "NORIA 20 M · OCA 4 % · tarjeta amarilla",
+    "fon": [
+     "NORIA = 20",
+     "OCA = 4"
+    ],
+    "img": "img/patio-5.jpg",
+    "audio": "audio/patio-5.mp3"
+   }
+  ]
+ }
+]

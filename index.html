@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El palacio del 11626</title>
+<!-- Palacio de la memoria en realidad mixta (Meta Quest 3, navegador, WebXR immersive-ar).
+     Colocar: cada tarjeta se ancla en un mueble real (anclas persistentes de Meta; si no hay, se
+     guarda la posición). Paseo: al acercarte, la voz cuenta el dato. Examen: tarjetas tapadas.
+     Fuera de las gafas: lista para repasar. Datos: datos.json (exportar.py). Sin datos personales. -->
+<style>
+:root{--fondo:#0f1724;--panel:#172338;--linea:#2c4060;--tinta:#eef2f7;--gris:#a9b8c9;--am:#f3b33d;--cy:#5cc9e2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--fondo);color:var(--tinta);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+body{padding:max(14px,env(safe-area-inset-top)) 16px 40px}
+.envoltura{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-size:26px} h2{font-size:20px;margin-top:8px}
+p,li{line-height:1.5;color:var(--gris);max-width:70ch}
+.entrar{font:inherit;font-size:20px;font-weight:700;padding:16px 26px;border-radius:14px;border:0;background:var(--am);color:#1b1407;cursor:pointer}
+.entrar:disabled{opacity:.5;cursor:default}
+.estado{font-size:15px;color:var(--cy)}
+.pasos{display:grid;gap:8px;padding-left:20px}
+.estancia{display:flex;flex-direction:column;gap:10px}
+.rejilla{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.tarjeta{background:var(--panel);border:1px solid var(--linea);border-radius:12px;overflow:hidden}
+.tarjeta canvas{width:100%;height:auto;display:block}
+button.borrar{font:inherit;font-size:15px;background:none;color:var(--gris);border:1px solid var(--linea);border-radius:10px;padding:8px 12px;cursor:pointer;align-self:flex-start}
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <h1>El palacio del 11626</h1>
+  <p>Tu casa como palacio de la memoria: 25 tarjetas en 5 estancias (porche · recibidor · salón · cocina · patio). Con las Quest 3, cada tarjeta se queda anclada en el mueble real.</p>
+  <button class="entrar" id="entrar" disabled>Entrar en realidad mixta</button>
+  <div class="estado" id="estado">Comprobando el visor…</div>
+  <ol class="pasos">
+    <li><b>Colocar</b> (una vez): la tarjeta que toca aparece delante de ti. Lleva el mando (o la mano) al mueble real y pulsa el gatillo (o pellizca): se queda anclada ahí. Para recolocar una, apúntala y pulsa.</li>
+    <li><b>Paseo</b>: recorre la casa. Al acercarte a una tarjeta, la voz cuenta el dato. Apúntala y pulsa para oírla otra vez.</li>
+    <li><b>Examen</b>: las tarjetas salen tapadas. Di el dato en voz alta y pulsa para comprobarlo.</li>
+    <li>El menú se abre con el botón <b>agarre</b> (lateral) o pellizcando al vacío.</li>
+  </ol>
+  <button class="borrar" id="borrar">Borrar las posiciones guardadas</button>
+  <div id="lista"></div>
+</div>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
+
+const ESTADO = document.getElementById("estado");
+const datos = await (await fetch("datos.json")).json();
+const LUGARES = datos.flatMap(e => e.lugares.map(l => ({...l, estancia: e.nombre, bloque: e.bloque, color: e.color})));
+const CLAVE = "palacio11626:";
+const leer = k => { try { return JSON.parse(localStorage.getItem(CLAVE + k) || "null"); } catch (e) { return null; } };
+const guardar = (k, v) => { try { localStorage.setItem(CLAVE + k, JSON.stringify(v)); } catch (e) {} };
+
+// ── imágenes y texturas de las tarjetas (canvas) ────────────────────────────────────────────
+const imagenes = {};
+await Promise.all(LUGARES.map(l => new Promise(ok => {
+  const im = new Image(); im.onload = () => { imagenes[l.id] = im; ok(); }; im.onerror = ok; im.src = l.img;
+})));
+
+function envolver(ctx, texto, x, y, ancho, alto) {
+  const pal = texto.split(" "); let linea = "", yy = y;
+  for (const p of pal) {
+    const prueba = linea ? linea + " " + p : p;
+    if (ctx.measureText(prueba).width > ancho && linea) { ctx.fillText(linea, x, yy); linea = p; yy += alto; }
+    else linea = prueba;
+  }
+  if (linea) { ctx.fillText(linea, x, yy); yy += alto; }
+  return yy;
+}
+
+function lienzoTarjeta(l, tapada) {
+  const W = 1024, H = 1040, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d");
+  x.fillStyle = "#fbf8f1"; x.fillRect(0, 0, W, H);
+  x.fillStyle = l.color; x.fillRect(0, 0, W, 70);
+  x.fillStyle = "#fff"; x.font = "bold 36px system-ui, sans-serif"; x.textBaseline = "middle";
+  x.fillText(`${l.estancia} · ${l.bloque}`, 24, 36);
+  // número
+  x.fillStyle = "#c8322a"; x.beginPath(); x.arc(70, 140, 50, 0, 7); x.fill();
+  x.fillStyle = "#fff"; x.font = "bold 64px system-ui"; x.textAlign = "center"; x.fillText(String(l.n), 70, 144); x.textAlign = "left";
+  x.fillStyle = "#1f2a37"; x.font = "bold 50px system-ui"; x.fillText(l.lugar, 140, 140);
+  if (tapada) {
+    x.fillStyle = "#1f2a37"; x.font = "bold 70px system-ui"; x.textAlign = "center";
+    x.fillText("¿Qué imagen hay aquí?", W / 2, 480); x.font = "44px system-ui"; x.fillStyle = "#5a6573";
+    x.fillText("Dilo en voz alta y pulsa para comprobarlo", W / 2, 580); x.textAlign = "left";
+    return c;
+  }
+  const im = imagenes[l.id];
+  if (im) { const h = 400, w = im.width * h / im.height; x.drawImage(im, (W - w) / 2, 196, w, h); }
+  x.fillStyle = "#1f2a37"; x.font = "bold 42px system-ui";
+  let y = envolver(x, l.titulo, 30, 640, W - 60, 48);
+  x.font = "34px system-ui"; x.fillStyle = "#3a4555";
+  for (const t of l.lineas) y = envolver(x, t, 30, y + 4, W - 60, 40);
+  if (l.fon.length) { x.fillStyle = "#a04c00"; x.font = "bold 38px system-ui"; envolver(x, l.fon.join("  ·  "), 30, y + 8, W - 60, 44); }
+  return c;
+}
+
+// lista para repasar fuera de las gafas (y prueba de las texturas)
+const lista = document.getElementById("lista");
+for (const e of datos) {
+  const s = document.createElement("section"); s.className = "estancia";
+  s.innerHTML = `<h2>${e.nombre} · ${e.bloque}</h2><div class="rejilla"></div>`;
+  for (const l of e.lugares) {
+    const t = document.createElement("div"); t.className = "tarjeta";
+    t.appendChild(lienzoTarjeta({...l, estancia: e.nombre, bloque: e.bloque, color: e.color}, false));
+    s.querySelector(".rejilla").appendChild(t);
+  }
+  lista.appendChild(s);
+}
+document.getElementById("borrar").onclick = () => {
+  if (confirm("¿Borrar dónde están colocadas las 25 tarjetas?")) { guardar("anclas", {}); guardar("poses", {}); ESTADO.textContent = "Posiciones borradas."; }
+};
+
+// ── realidad mixta ─────────────────────────────────────────────────────────────────────────
+const boton = document.getElementById("entrar");
+const soporta = navigator.xr && await navigator.xr.isSessionSupported("immersive-ar").catch(() => false);
+if (soporta) { boton.disabled = false; ESTADO.textContent = `Visor listo. ${Object.keys(leer("poses") || {}).length} de 25 tarjetas colocadas.`; }
+else ESTADO.textContent = "Este navegador no tiene realidad mixta: ábrelo en el navegador de las Quest 3. Aquí abajo puedes repasar las tarjetas.";
+
+const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true});
+renderer.setPixelRatio(window.devicePixelRatio); renderer.xr.enabled = true;
+const escena = new THREE.Scene();
+const camara = new THREE.PerspectiveCamera(70, 1, 0.02, 50);
+escena.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2.5));
+
+const ANCHO = 0.42, ALTO = ANCHO * 1040 / 1024;
+const tarjetas = {};   // id → {grupo, frente, tapa, l, ancla, puesta}
+function texturaDe(canvas) { const t = new THREE.CanvasTexture(canvas); t.colorSpace = THREE.SRGBColorSpace; return t; }
+for (const l of LUGARES) {
+  const g = new THREE.Group();
+  const frente = texturaDe(lienzoTarjeta(l, false)), tapa = texturaDe(lienzoTarjeta(l, true));
+  const malla = new THREE.Mesh(new THREE.PlaneGeometry(ANCHO, ALTO), new THREE.MeshBasicMaterial({map: frente, side: THREE.DoubleSide}));
+  malla.userData.id = l.id; g.add(malla); g.visible = false; escena.add(g);
+  tarjetas[l.id] = {grupo: g, malla, frente, tapa, l, ancla: null, puesta: false, girada: false, oido: 0};
+}
+
+// panel de menú y aviso (canvas)
+function panel(lineas, botones) {
+  const W = 1024, H = 640, c = document.createElement("canvas"); c.width = W; c.height = H; const x = c.getContext("2d");
+  x.fillStyle = "rgba(15,23,36,.92)"; x.fillRect(0, 0, W, H);
+  x.fillStyle = "#f3b33d"; x.font = "bold 46px system-ui"; x.fillText(lineas[0], 36, 70);
+  x.fillStyle = "#eef2f7"; x.font = "34px system-ui"; let y = 130;
+  for (const t of lineas.slice(1)) y = envolver(x, t, 36, y, W - 72, 42) + 6;
+  const zonas = [];
+  botones.forEach((b, i) => {
+    const bx = 36 + (i % 2) * 486, by = 330 + Math.floor(i / 2) * 140;
+    x.fillStyle = b.activo ? "#5cc9e2" : "#2c4060"; x.fillRect(bx, by, 460, 110);
+    x.fillStyle = b.activo ? "#06202a" : "#eef2f7"; x.font = "bold 40px system-ui"; x.fillText(b.texto, bx + 26, by + 68);
+    zonas.push({...b, u0: bx / W, u1: (bx + 460) / W, v0: 1 - (by + 110) / H, v1: 1 - by / H});
+  });
+  return {c, zonas};
+}
+const menu = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.375), new THREE.MeshBasicMaterial({transparent: true}));
+escena.add(menu); let zonasMenu = [];
+let modo = "menu", siguiente = 0;
+function pintarMenu() {
+  const puestas = Object.values(tarjetas).filter(t => t.puesta).length;
+  let lineas, botones = [{id: "colocar", texto: "Colocar", activo: modo === "colocar"}, {id: "paseo", texto: "Paseo", activo: modo === "paseo"},
+                        {id: "examen", texto: "Examen", activo: modo === "examen"}, {id: "salir", texto: "Salir"}];
+  if (modo === "colocar") {
+    const l = LUGARES[siguiente];
+    lineas = l ? [`Coloca ${siguiente + 1} de 25`, `${l.estancia} · ${l.n} · ${l.lugar}`, `${l.rotulo}`, "Lleva el mando o la mano al sitio real y pulsa el gatillo o pellizca."]
+               : ["Las 25 están colocadas", "Pasa a Paseo. Para mover una, apúntala y pulsa: vuelve a tu mano."];
+  } else lineas = ["El palacio del 11626", `${puestas} de 25 tarjetas colocadas.`, "Agarre (botón lateral): abrir o cerrar este menú."];
+  const p = panel(lineas, botones); zonasMenu = p.zonas;
+  menu.material.map?.dispose(); menu.material.map = texturaDe(p.c); menu.material.needsUpdate = true;
+}
+function ponerMenuDelante() {
+  const p = new THREE.Vector3(), d = new THREE.Vector3();
+  camara.getWorldPosition(p); camara.getWorldDirection(d); d.y = 0; d.normalize();
+  menu.position.copy(p).addScaledVector(d, 0.7); menu.position.y = p.y - 0.15; menu.lookAt(p.x, menu.position.y, p.z);
+  menu.visible = true; pintarMenu();
+}
+
+// rayos de los mandos / manos
+const rayo = new THREE.Raycaster();
+const controles = [0, 1].map(i => {
+  const c = renderer.xr.getController(i);
+  const linea = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 0, -1)]),
+                               new THREE.LineBasicMaterial({color: 0xf3b33d}));
+  linea.scale.z = 3; c.add(linea); escena.add(c); return c;
+});
+
+let sesion = null, espacio = null, anclasOK = false;
+const audio = new Audio();
+function oir(t) { audio.src = t.l.audio; audio.play().catch(() => {}); t.oido = performance.now(); }
+
+function aplicarModo() {
+  for (const t of Object.values(tarjetas)) {
+    t.grupo.visible = t.puesta || (modo === "colocar" && LUGARES[siguiente] && t.l.id === LUGARES[siguiente].id);
+    t.girada = false; t.malla.material.map = modo === "examen" ? t.tapa : t.frente; t.malla.material.needsUpdate = true;
+  }
+  pintarMenu();
+}
+function primeraLibre() { const i = LUGARES.findIndex(l => !tarjetas[l.id].puesta); return i < 0 ? LUGARES.length : i; }
+
+async function anclar(t, frame, pos, quat) {
+  const poses = leer("poses") || {}; poses[t.l.id] = [pos.x, pos.y, pos.z]; guardar("poses", poses);
+  if (!anclasOK || !frame.createAnchor) return;
+  try {
+    const ancla = await frame.createAnchor(new XRRigidTransform(pos, quat), espacio);
+    t.ancla = ancla;
+    if (ancla.requestPersistentHandle) {
+      const h = await ancla.requestPersistentHandle(); const a = leer("anclas") || {};
+      if (a[t.l.id] && sesion.deletePersistentAnchor) sesion.deletePersistentAnchor(a[t.l.id]).catch(() => {});
+      a[t.l.id] = h; guardar("anclas", a);
+    }
+  } catch (e) { console.warn("ancla", e); }
+}
+
+function interseccion(fuenteRayo) {
+  rayo.ray.origin.copy(fuenteRayo.origin); rayo.ray.direction.copy(fuenteRayo.dir);
+  const objetos = [menu.visible ? menu : null, ...Object.values(tarjetas).filter(t => t.puesta && t.grupo.visible).map(t => t.malla)].filter(Boolean);
+  return rayo.intersectObjects(objetos, false)[0];
+}
+
+function alSeleccionar(ev) {
+  const frame = ev.frame, fuente = ev.inputSource;
+  const pr = frame.getPose(fuente.targetRaySpace, espacio); if (!pr) return;
+  const m = new THREE.Matrix4().fromArray(pr.transform.matrix);
+  const origin = new THREE.Vector3().setFromMatrixPosition(m), dir = new THREE.Vector3(0, 0, -1).transformDirection(m);
+  const hit = interseccion({origin, dir});
+  if (hit && hit.object === menu) {
+    const z = zonasMenu.find(z => hit.uv.x >= z.u0 && hit.uv.x <= z.u1 && hit.uv.y >= z.v0 && hit.uv.y <= z.v1);
+    if (!z) return;
+    if (z.id === "salir") { sesion.end(); return; }
+    modo = z.id; if (modo === "colocar") siguiente = primeraLibre();
+    menu.visible = false; aplicarModo(); return;
+  }
+  if (hit) {                                             // sobre una tarjeta
+    const t = tarjetas[hit.object.userData.id];
+    if (modo === "colocar") { t.puesta = false; t.ancla = null; siguiente = LUGARES.findIndex(l => l.id === t.l.id); aplicarModo(); return; }
+    if (modo === "examen" && !t.girada) { t.girada = true; t.malla.material.map = t.frente; t.malla.material.needsUpdate = true; }
+    oir(t); return;
+  }
+  if (modo === "colocar" && LUGARES[siguiente]) {        // colocar la que toca en la mano
+    const pg = (fuente.gripSpace && frame.getPose(fuente.gripSpace, espacio)) || pr;
+    const p = new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().fromArray(pg.transform.matrix));
+    p.y += 0.12;
+    const t = tarjetas[LUGARES[siguiente].id];
+    t.grupo.position.copy(p); t.puesta = true;
+    anclar(t, frame, {x: p.x, y: p.y, z: p.z, w: 1}, {x: 0, y: 0, z: 0, w: 1});
+    oir(t); siguiente = primeraLibre(); aplicarModo();
+    if (!LUGARES[siguiente]) ponerMenuDelante();
+    return;
+  }
+  if (modo !== "colocar") ponerMenuDelante();          // pellizco al vacío: menú (sirve con las manos)
+}
+
+async function entrar() {
+  sesion = await navigator.xr.requestSession("immersive-ar", {requiredFeatures: ["local-floor"],
+                                                              optionalFeatures: ["anchors", "hand-tracking"]});
+  anclasOK = sesion.enabledFeatures ? sesion.enabledFeatures.includes("anchors") : true;
+  renderer.xr.setReferenceSpaceType("local-floor");
+  await renderer.xr.setSession(sesion);
+  espacio = renderer.xr.getReferenceSpace();
+  sesion.addEventListener("select", alSeleccionar);
+  sesion.addEventListener("squeeze", () => { menu.visible ? (menu.visible = false) : ponerMenuDelante(); });
+  sesion.addEventListener("end", () => { sesion = null; ESTADO.textContent = `Has salido. ${Object.values(tarjetas).filter(t => t.puesta).length} de 25 colocadas.`; });
+  // recuperar posiciones: primero las anclas persistentes, si no la posición guardada
+  const poses = leer("poses") || {}, anclas = leer("anclas") || {};
+  for (const [id, p] of Object.entries(poses)) { if (tarjetas[id]) { tarjetas[id].grupo.position.set(...p); tarjetas[id].puesta = true; } }
+  if (anclasOK && sesion.restorePersistentAnchor) {
+    for (const [id, h] of Object.entries(anclas)) {
+      sesion.restorePersistentAnchor(h).then(a => { if (tarjetas[id]) tarjetas[id].ancla = a; }).catch(() => {});
+    }
+  }
+  modo = "menu"; aplicarModo(); setTimeout(ponerMenuDelante, 300);
+}
+boton.onclick = () => entrar().catch(e => { ESTADO.textContent = "No se pudo entrar: " + e.message; });
+
+const cab = new THREE.Vector3();
+renderer.setAnimationLoop((tiempo, frame) => {
+  if (!frame) return;
+  camara.getWorldPosition(cab);
+  for (const t of Object.values(tarjetas)) {
+    if (t.ancla && t.ancla.anchorSpace) {
+      const p = frame.getPose(t.ancla.anchorSpace, espacio);
+      if (p) t.grupo.position.set(p.transform.position.x, p.transform.position.y, p.transform.position.z);
+    }
+    if (t.grupo.visible) {
+      t.grupo.lookAt(cab.x, t.grupo.position.y, cab.z);       // la tarjeta mira hacia ti
+      if (modo === "paseo" && t.puesta && t.grupo.position.distanceTo(cab) < 1.2 && performance.now() - t.oido > 60000 && audio.paused) oir(t);
+    }
+  }
+  // en colocar, la tarjeta que toca flota delante de ti
+  if (modo === "colocar" && LUGARES[siguiente]) {
+    const t = tarjetas[LUGARES[siguiente].id]; if (!t.puesta) {
+      const d = new THREE.Vector3(); camara.getWorldDirection(d); d.y = 0; d.normalize();
+      t.grupo.position.copy(cab).addScaledVector(d, 0.8); t.grupo.position.y = cab.y - 0.22; t.grupo.visible = true;
+    }
+  }
+  renderer.render(escena, camara);
+});
+</script>
+</body>
+</html>
